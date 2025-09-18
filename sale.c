@@ -1,177 +1,305 @@
 #include "sale.h"
-#include <string.h>
-int receipt = 1;
 
-void saleProcess(sqlite3 *db)
+static int currentReceiptNo = 0;
+static int receiptTotal = 0;
+
+int getLastReceiptNo(sqlite3 *db) 
 {
-    char choice;
-    printf("============ SALE MENU ============\n");
-    printf("\t1 - Sale Product\n");
-    printf("\t2 - Pay\n");
-    printf("\t3 - Close Receipt\n");
-    printf("\t4 - Back to Main\n");
-    printf("\t>");
-    scanf("%s",&choice);
-
-    while (1)
+    sqlite3_stmt *stmt;
+    int lastReceiptNo = 0;
+    const char *sql = "SELECT MAX(ReceiptNo) FROM Receipt;";
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) 
     {
-        switch (choice)
+        if (sqlite3_step(stmt) == SQLITE_ROW) 
         {
+            lastReceiptNo = sqlite3_column_int(stmt, 0);
+        }
+        sqlite3_finalize(stmt);
+    }
+    return lastReceiptNo;
+}
+
+int getReceiptTotal(sqlite3 *db, int receiptNo) 
+{
+    sqlite3_stmt *stmt;
+    int total = 0;
+    const char *sql = "SELECT SUM(Price) FROM ReceiptDetails WHERE ReceiptNo = ?;";
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) 
+    {
+        sqlite3_bind_int(stmt, 1, receiptNo);
+        if (sqlite3_step(stmt) == SQLITE_ROW) 
+        {
+            total = sqlite3_column_int(stmt, 0);
+        }
+        sqlite3_finalize(stmt);
+    } 
+    else 
+    {
+        fprintf(stderr, "SQL Error: %s\n", sqlite3_errmsg(db));
+    }
+    return total;
+}
+
+
+void saleProcess(sqlite3 *db) 
+{
+    char choice = 0;
+
+    if (currentReceiptNo == 0) 
+    {
+        currentReceiptNo = getLastReceiptNo(db) + 1;
+        printf("Starting new receipt. Receipt No: %d\n", currentReceiptNo);
+    }
+
+    printf("============ SALE MENU ============\n");
+    printf("1 - Sale Product\n");
+    printf("2 - Pay\n");
+    printf("3 - Close Receipt\n");
+    printf("4 - Back to Main\n");
+    printf(">");
+    scanf(" %c", &choice);
+
+    switch (choice) 
+    {
         case '1':
-            saleProduct(db,&receipt);          
+            saleProduct(db);
             break;
         case '2':
             payment(db);
             break;
         case '3':
-            printf("\tClose receipt bl bla bla bla\n");
+            closeReceipt(db);
             break;
         case '4':
-            printf("\tReturning to the Main Menu");
             return;
-            break;        
         default:
-        printf("\tInvalid Choice!!!\n");
+            printf("Invalid Choice!!!\n");
             break;
-        }
     }
-    
+    saleProcess(db); 
 }
 
-int getSingleIntValue(sqlite3 *db, const char *sql, int pluNo) 
-{
-    sqlite3_stmt *stmt;
-    int result = -1;
-
- if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) {
-        sqlite3_bind_int(stmt, 1, pluNo);
-
-        if (sqlite3_step(stmt) == SQLITE_ROW) {
-            int count = sqlite3_column_int(stmt, 0);
-            if (count > 0) {
-                result = 1; 
-            }
-        }
-        sqlite3_finalize(stmt);
-    } else {
-        fprintf(stderr, "\tSQL Error: %s\n", sqlite3_errmsg(db));
-    }
-
-    return result;
-}
-
-void saleProduct(sqlite3 *db, int *currentReceiptNo_ptr)
+void saleProduct(sqlite3 *db) 
 {
     sqlite3_stmt *stmt = NULL;
-    int userEnteredPluNo;
-    int productCount;
-    int success = 0; 
-    int currentReceiptNo = *currentReceiptNo_ptr; 
+    int userEnteredPluNo = 0;
+    int productPrice = 0;
+    char *productName = NULL;
 
-    const char *sql_insert = "INSERT INTO ReceiptDetails (ReceiptNo, PluNo, PluName, Price) "
-                             "SELECT ?, PluNo, Name, Price "
-                             "FROM Product WHERE PluNo = ?;";
-
-    printf("\t Enter Plu No:\n\t> ");
+    printf("Enter Plu Number:\n>");
     scanf("%d", &userEnteredPluNo);
 
-    productCount = getSingleIntValue(db, "SELECT COUNT(*) FROM Product WHERE PluNo = ?", userEnteredPluNo);
-
-    if (1 == productCount)
+    
+    const char *sql_select_product = "SELECT Name, Price FROM Product WHERE PluNo = ?;";
+    if (sqlite3_prepare_v2(db, sql_select_product, -1, &stmt, 0) == SQLITE_OK) 
     {
-        printf("\tProduct is Found!!!!\n");
-        do
+        sqlite3_bind_int(stmt, 1, userEnteredPluNo);
+
+        if (sqlite3_step(stmt) == SQLITE_ROW) 
         {
-            if (sqlite3_prepare_v2(db, sql_insert, -1, &stmt, 0) != SQLITE_OK)
-            {
-                fprintf(stderr, "\tSQL Error: %s\n", sqlite3_errmsg(db));
-                break;
-            }
+            productName = strdup((const char *)sqlite3_column_text(stmt, 0));
+            productPrice = sqlite3_column_int(stmt, 1);
+            printf("Product is Found!!!\n");
+            sqlite3_finalize(stmt);
 
-            sqlite3_bind_int(stmt, 1, currentReceiptNo);
-            sqlite3_bind_int(stmt, 2, userEnteredPluNo);
-
-            if (sqlite3_step(stmt) != SQLITE_DONE)
+           
+            const char *sql_insert = "INSERT INTO ReceiptDetails (ReceiptNo, PluNo, PluName, Price) VALUES (?, ?, ?, ?);";
+            sqlite3_stmt *insert_stmt;
+            if (sqlite3_prepare_v2(db, sql_insert, -1, &insert_stmt, 0) == SQLITE_OK) 
             {
-                
-                if (sqlite3_extended_errcode(db) == SQLITE_CONSTRAINT_UNIQUE)
+                sqlite3_bind_int(insert_stmt, 1, currentReceiptNo);
+                sqlite3_bind_int(insert_stmt, 2, userEnteredPluNo);
+                sqlite3_bind_text(insert_stmt, 3, productName, -1, SQLITE_TRANSIENT);
+                sqlite3_bind_int(insert_stmt, 4, productPrice);
+
+                if (sqlite3_step(insert_stmt) == SQLITE_DONE) 
                 {
-                    printf("\tCreating a new receipt\n");
-                    
-                    
-                    currentReceiptNo = currentReceiptNo + 1; 
-                    printf("\tNew Receipt number: %d\n", currentReceiptNo);
-                    sqlite3_finalize(stmt); 
-                    stmt =NULL;
-                }
+                    printf("Product added successfully!\n");
+                } 
                 else
                 {
-                    fprintf(stderr, "\tSQl adding error: %s\n", sqlite3_errmsg(db));
-                    return saleProcess(db);
+                    fprintf(stderr, "SQL adding error: %s\n", sqlite3_errmsg(db));
                 }
-            }
-            else
+                sqlite3_finalize(insert_stmt);
+            } 
+            else 
             {
-                printf("\tReceipt is succesfuly added\n");
-                success = 1;
-                return saleProcess(db);
+                fprintf(stderr, "SQL Error: %s\n", sqlite3_errmsg(db));
             }
-
-        } while (!success);
-
-        *currentReceiptNo_ptr = currentReceiptNo; 
-        if (stmt)
+        } 
+        else 
         {
+            printf("Product has not been found.\n");
             sqlite3_finalize(stmt);
         }
-        
-        
-    }
-    else
+    } 
+    else 
     {
-        printf("\tError: No product with the entered PLU number was found.\n");
-        return saleProcess(db);
+        fprintf(stderr, "SQL Error: %s\n", sqlite3_errmsg(db));
     }
-
-    
+    if (productName) free(productName);
 }
 
-void payment(sqlite3 *db)
+void payment(sqlite3 *db) 
 {
-    char choice = 0;
-    int amount = 0;
+    char choice;
+    int amount;
+    sqlite3_stmt *stmt = NULL;
+    int hasReceiptRecord = 0;
+    int currentCashPaid = 0;
+    int currentCreditPaid = 0;
 
-    printf("\t============ Enter Payment Type ============\n");
-    printf("\t1 - Cash\n");
-    printf("\t2 - Credit\n");
-    printf("\t>");
-    scanf("%s", &choice);
+    receiptTotal = getReceiptTotal(db, currentReceiptNo);
 
-    if (choice == '1')
+    if (receiptTotal == 0) 
     {
-        printf("\tEnter Amount\n");
-        printf("\t>");
-        scanf("%d",&amount);
-
-
-        return saleProcess(db);
+        printf("No products added to this receipt.\n");
+        return;
     }
-    else if(choice == '2')
+
+    
+    const char *sql_check = "SELECT COUNT(*) FROM Receipt WHERE ReceiptNo = ?;";
+    if (sqlite3_prepare_v2(db, sql_check, -1, &stmt, 0) == SQLITE_OK) 
     {
-        printf("\tEnter Amount\n");
-        printf("\t>");
-        scanf("%d",&amount);
-
-
-        return saleProcess(db);
+        sqlite3_bind_int(stmt, 1, currentReceiptNo);
+        if (sqlite3_step(stmt) == SQLITE_ROW && sqlite3_column_int(stmt, 0) > 0) 
+        {
+            hasReceiptRecord = 1;
+        }
+        sqlite3_finalize(stmt);
+    } 
+    else 
+    {
+        fprintf(stderr, "SQL Error: %s\n", sqlite3_errmsg(db));
+        return;
     }
-    else
+
+    if (hasReceiptRecord) 
     {
-        printf("\tInvalid Number!! pls try again\n");
+        
+        const char *sql_get_paid = "SELECT CashPayment, CreditPayment FROM Receipt WHERE ReceiptNo = ?;";
+        if (sqlite3_prepare_v2(db, sql_get_paid, -1, &stmt, 0) == SQLITE_OK) 
+        {
+            sqlite3_bind_int(stmt, 1, currentReceiptNo);
+            if (sqlite3_step(stmt) == SQLITE_ROW) 
+            {
+                currentCashPaid = sqlite3_column_int(stmt, 0);
+                currentCreditPaid = sqlite3_column_int(stmt, 1);
+            }
+            sqlite3_finalize(stmt);
+        } 
+        else
+        {
+            fprintf(stderr, "SQL Error: %s\n", sqlite3_errmsg(db));
+            return;
+        }
     }
     
+    int totalPaid = currentCashPaid + currentCreditPaid;
+    int remainingAmount = receiptTotal - totalPaid;
+
+    while (remainingAmount > 0) {
+        printf("\n============ Payment Selection ============\n");
+        printf("Current Receipt Total: %d\n", receiptTotal);
+        printf("Total Paid: %d\n", totalPaid);
+        printf("Remaining Amount: %d\n", remainingAmount);
+        printf("Enter Payment Type: 1-Cash 2-Credit 3-Cancel\n>");
+        scanf(" %c", &choice);
+        
+        if (choice == '3') 
+        {
+            printf("Payment canceled.\n");
+            return;
+        }
+
+        if (choice != '1' && choice != '2') 
+        {
+            printf("Invalid selection! Please try again.\n");
+            continue;
+        }
+
+        printf("Enter Amount:\n>");
+        scanf("%d", &amount);
+
+        if (amount > remainingAmount) 
+        {
+            printf("Entered amount is more than remaining amount. Please try again.\n");
+            continue;
+        }
+        if (amount < 0)
+        {
+            printf("you canot pay negaive value .\n");
+            continue;
+        }
+
+        if (choice == '1') 
+        {
+            currentCashPaid += amount;
+        } 
+        else 
+        {
+            currentCreditPaid += amount;
+        }
+
+        totalPaid += amount;
+        remainingAmount = receiptTotal - totalPaid;
+
+        printf("Payment successful! Remaining: %d\n", remainingAmount);
+    }
+
+    
+    if (hasReceiptRecord) 
+    {
+        const char *sql_update_final = "UPDATE Receipt SET ReceiptTotal = ?, CashPayment = ?, CreditPayment = ? WHERE ReceiptNo = ?;";
+        if (sqlite3_prepare_v2(db, sql_update_final, -1, &stmt, 0) == SQLITE_OK) 
+        {
+            sqlite3_bind_int(stmt, 1, receiptTotal);
+            sqlite3_bind_int(stmt, 2, currentCashPaid);
+            sqlite3_bind_int(stmt, 3, currentCreditPaid);
+            sqlite3_bind_int(stmt, 4, currentReceiptNo);
+
+            if (sqlite3_step(stmt) != SQLITE_DONE) 
+            {
+                fprintf(stderr, "Final update failed: %s\n", sqlite3_errmsg(db));
+            }
+            sqlite3_finalize(stmt);
+        } 
+        else 
+        {
+            fprintf(stderr, "SQL Error: %s\n", sqlite3_errmsg(db));
+        }
+    } 
+    else 
+    {
+
+        const char *sql_insert = "INSERT INTO Receipt (ReceiptNo, ReceiptTotal, CashPayment, CreditPayment) VALUES (?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, sql_insert, -1, &stmt, 0) == SQLITE_OK) 
+        {
+            sqlite3_bind_int(stmt, 1, currentReceiptNo);
+            sqlite3_bind_int(stmt, 2, receiptTotal);
+            sqlite3_bind_int(stmt, 3, currentCashPaid);
+            sqlite3_bind_int(stmt, 4, currentCreditPaid);
+
+            if (sqlite3_step(stmt) != SQLITE_DONE) 
+            {
+                fprintf(stderr, "Initial insert failed: %s\n", sqlite3_errmsg(db));
+            }
+            sqlite3_finalize(stmt);
+        } 
+        else 
+        {
+            fprintf(stderr, "SQL Error: %s\n", sqlite3_errmsg(db));
+        }
+    }
+    
+    printf("Payment for this receipt is completed.\n");
     
 }
 
-
-
+void closeReceipt(sqlite3 *db) 
+{
+    printf("Receipt Successfully Closed.\n");
+    currentReceiptNo++;
+    receiptTotal = 0;
+    
+}

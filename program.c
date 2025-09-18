@@ -1,13 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 #include "program.h"
+
 int rc;
 sqlite3_stmt *stmt;
 char line[256];
 
-int createTables(sqlite3 *db, const char *createTable) // oluşturlacak tabloları bu türden oluştur ne kadar toblo varsa bu fonksiyona parametre olarak ver
+int createTables(sqlite3 *db, const char *createTable) 
 {
     
 
@@ -17,13 +14,13 @@ int createTables(sqlite3 *db, const char *createTable) // oluşturlacak tablolar
     if(rc != SQLITE_OK)
     {
 
-        fprintf(stderr, "\tSQL Error: %s\n", err_msg);
+        fprintf(stderr, "SQL Error: %s\n", err_msg);
         sqlite3_free(err_msg);
         return -1;
     }
     else
     {
-        fprintf(stdout, "\tTables succesfuly created\n");
+        fprintf(stdout, "Tables succesfuly created\n");
     }
 
     return 0;
@@ -35,7 +32,7 @@ int insert_data(sqlite3 *db, const char *sql, const char *value1, int value2)
 
      if (rc != SQLITE_OK)
      {
-        fprintf(stderr, "\tReady Error: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "Ready Error: %s\n", sqlite3_errmsg(db));
         return -1;
      }
 
@@ -48,13 +45,13 @@ int insert_data(sqlite3 *db, const char *sql, const char *value1, int value2)
 
     if (rc != SQLITE_DONE)
     {
-        fprintf(stderr, "\tInsertion Error: %s\n ",sqlite3_errmsg(db));
+        fprintf(stderr, "Insertion Error: %s\n ",sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         return -1;
     }
 
     sqlite3_finalize(stmt);
-    printf("\tInsertion successful\n");
+    printf("Insertion successful\n");
     return 0;
     
 }
@@ -113,47 +110,42 @@ void syncProduct(sqlite3 *db)
             } 
             else 
             {
-                printf("\tError inserting data: %s\n", sqlite3_errmsg(db));
+                printf("Error inserting data: %s\n", sqlite3_errmsg(db));
             }
 
             sqlite3_finalize(stmt);
         } 
         else 
         {
-            printf("\tError preparing statement: %s\n", sqlite3_errmsg(db));
+            printf("Error preparing statement: %s\n", sqlite3_errmsg(db));
         }
 
     }
     fclose(fp);
     printf("\t%d Record Success\n", count);
-    sleep(2);
 }
 void prgmProcess(sqlite3 *db)
 {
-    while (1)
-    {
-        char choice = 0;
-        printf("============ PROGRAM MENU ============\n");
-        printf("\t1 - Sync Product\n");
-        printf("\t2 - Back to Main\n");
-        printf("\t>");
-        scanf("%s",&choice);
+    
+    
+    char choice = 0;
+    printf("============ PROGRAM MENU ============\n");
+    printf("1 - Sync Product\n");
+    printf("2 - Back to Main\n");
+    printf(">");
+    scanf("%s",&choice);
 
-        switch (choice)
-        {
-            case '1':
-                syncProduct(db);
+    switch (choice)
+    {
+        case '1':
+            syncProduct(db);
             break;
-            case '2':
+        case '2':
             return;
             break;
-            default:
-                printf("\tInvalid choice\n");
+        default:
+            printf("Invalid choice\n");
             break;
-        }
-    
     }
     
-    
-
 }

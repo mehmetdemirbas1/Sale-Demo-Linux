@@ -1,0 +1,14 @@
+[
+  {
+    "ReceiptNo": 1,
+    "ReceiptTotal": 880,
+    "CashPayment": 247,
+    "CreditPayment": 633
+  },
+  {
+    "ReceiptNo": 2,
+    "ReceiptTotal": 8671,
+    "CashPayment": 671,
+    "CreditPayment": 8000
+  }
+]

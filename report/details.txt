@@ -1,0 +1,158 @@
+[
+  {
+    "ReceiptNo": 1,
+    "ReceiptTotal": 880,
+    "CashPayment": 247,
+    "CreditPayment": 633,
+    "ReceiptDetails": [
+      {
+        "PluNo": 5,
+        "PluName": "KEK",
+        "Price": 50
+      },
+      {
+        "PluNo": 5,
+        "PluName": "KEK",
+        "Price": 50
+      },
+      {
+        "PluNo": 5,
+        "PluName": "KEK",
+        "Price": 50
+      },
+      {
+        "PluNo": 5,
+        "PluName": "KEK",
+        "Price": 50
+      },
+      {
+        "PluNo": 6,
+        "PluName": "EKMEK",
+        "Price": 182
+      },
+      {
+        "PluNo": 6,
+        "PluName": "EKMEK",
+        "Price": 182
+      },
+      {
+        "PluNo": 7,
+        "PluName": "ARMUT",
+        "Price": 90
+      },
+      {
+        "PluNo": 10,
+        "PluName": "MANDALINA",
+        "Price": 112
+      },
+      {
+        "PluNo": 12,
+        "PluName": "AVOCADO",
+        "Price": 114
+      }
+      ]
+  },
+  {
+    "ReceiptNo": 2,
+    "ReceiptTotal": 8671,
+    "CashPayment": 671,
+    "CreditPayment": 8000,
+    "ReceiptDetails": [
+      {
+        "PluNo": 1,
+        "PluName": "ELMA",
+        "Price": 805
+      },
+      {
+        "PluNo": 1,
+        "PluName": "ELMA",
+        "Price": 805
+      },
+      {
+        "PluNo": 1,
+        "PluName": "ELMA",
+        "Price": 805
+      },
+      {
+        "PluNo": 1,
+        "PluName": "ELMA",
+        "Price": 805
+      },
+      {
+        "PluNo": 1,
+        "PluName": "ELMA",
+        "Price": 805
+      },
+      {
+        "PluNo": 2,
+        "PluName": "MUZ",
+        "Price": 958
+      },
+      {
+        "PluNo": 2,
+        "PluName": "MUZ",
+        "Price": 958
+      },
+      {
+        "PluNo": 2,
+        "PluName": "MUZ",
+        "Price": 958
+      },
+      {
+        "PluNo": 2,
+        "PluName": "MUZ",
+        "Price": 958
+      },
+      {
+        "PluNo": 5,
+        "PluName": "KEK",
+        "Price": 50
+      },
+      {
+        "PluNo": 5,
+        "PluName": "KEK",
+        "Price": 50
+      },
+      {
+        "PluNo": 5,
+        "PluName": "KEK",
+        "Price": 50
+      },
+      {
+        "PluNo": 5,
+        "PluName": "KEK",
+        "Price": 50
+      },
+      {
+        "PluNo": 5,
+        "PluName": "KEK",
+        "Price": 50
+      },
+      {
+        "PluNo": 9,
+        "PluName": "PORTAKAL",
+        "Price": 111
+      },
+      {
+        "PluNo": 9,
+        "PluName": "PORTAKAL",
+        "Price": 111
+      },
+      {
+        "PluNo": 12,
+        "PluName": "AVOCADO",
+        "Price": 114
+      },
+      {
+        "PluNo": 12,
+        "PluName": "AVOCADO",
+        "Price": 114
+      },
+      {
+        "PluNo": 12,
+        "PluName": "AVOCADO",
+        "Price": 114
+      }
+      ]
+  }
+]

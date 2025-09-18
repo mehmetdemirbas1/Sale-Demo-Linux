@@ -5,6 +5,7 @@
 #include "sale.h"
 #include "report.h"
 
+
 sqlite3 *db;
 char *zErrMsg = 0;
 int rc;
@@ -18,6 +19,7 @@ int DB_Init();
 int main()
 {
 
+    system("clear");    
     DB_Init();
     while (1)
     {
@@ -36,12 +38,12 @@ sqlite3 *create_conn(const char* dbName)
 
     if (rc != SQLITE_OK)
     {
-        fprintf(stderr,"\tDB cannot open!! : %s\n", sqlite3_errmsg(db));
+        fprintf(stderr,"DB cannot open!! : %s\n", sqlite3_errmsg(db));
         return NULL;
     }
     else
     {
-        fprintf(stdout, "\tDB is open\n");
+        fprintf(stdout, "DB is open\n");
     }
     return db;
     
@@ -49,15 +51,14 @@ sqlite3 *create_conn(const char* dbName)
 
 void menu()
 {
-
     
     char choice;
     printf("============ MAIN MENU ============\n");
-    printf("\t1 - PROGRAM\n");
-    printf("\t2 - SALE\n");
-    printf("\t3 - REPORT\n");
-    printf("\t4 - EXIT\n");
-    printf("\t>");
+    printf("1 - PROGRAM\n");
+    printf("2 - SALE\n");
+    printf("3 - REPORT\n");
+    printf("4 - EXIT\n");
+    printf(">");
     scanf("%s",&choice);
     
     switch (choice)
@@ -72,18 +73,20 @@ void menu()
         reptProcess(db);
         break;
     case '4':
-        printf("\tExitting...\n");
+        printf("Exitting...\n");
         exit(0);
         break;
     default:
-        printf("\tInvalid choice pls try again !!!\n");
+        printf("Invalid choice pls try again !!!\n");
         break;
     }
 }
 
+
+
 int DB_Init()
 {
-        db = create_conn("cashRegisterr.db");
+    db = create_conn("cashRegisterr.db");
     if (db == NULL)
     {
         return 1;
@@ -95,14 +98,15 @@ int DB_Init()
                                     "VatRate INTEGER, "
                                     "Barcode TEXT);";
     const char  *sqlCrTable_Receipt = "CREATE TABLE IF NOT EXISTS Receipt ("
-                                    "ReceiptNo INTEGER, "
+                                    "ReceiptNo INTEGER,  "
                                     "ReceiptTotal INTEGER, "
                                     "CashPayment INTEGER, "
                                     "CreditPayment INTEGER);";
     
     const char  *sqlCrTable_ReceiptDetails = "CREATE TABLE IF NOT EXISTS ReceiptDetails ("
+                                        "ID INTEGER PRIMARY KEY AUTOINCREMENT, "
                                         "ReceiptNo INTEGER, "
-                                        "PluNo INTEGER PRIMARY KEY, "
+                                        "PluNo INTEGER, "
                                         "PluName TEXT, "
                                         "Price INTEGER);";
 
@@ -115,3 +119,4 @@ int DB_Init()
     
 
 }
+
